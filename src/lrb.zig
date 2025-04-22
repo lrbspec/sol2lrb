@@ -3,7 +3,7 @@ const sol = @import("sol.zig");
 const amf = @import("amf0.zig");
 
 pub const modflags = packed struct(u8) {
-    optional: bool = false,
+    required: bool = false,
     physics: bool = false,
     camera: bool = false,
     scenery: bool = false,
@@ -21,7 +21,6 @@ const Bytes = std.ArrayList(u8);
 pub const modtable_entry = struct {
     name: []const u8,
     version: u16,
-    optional_msg: ?[]const u8 = null,
     data: ?[]const u8 = null,
     flags: modflags = modflags{},
     data_segment_position: ?u64 = null,
@@ -39,9 +38,8 @@ pub const modtable_entry = struct {
         return modtable_entry{
             .name = "base.label",
             .version = 0,
-            .optional_msg = "contains track name",
             .data = data,
-            .flags = modflags{ .optional = true, .extra_data = true },
+            .flags = modflags{ .extra_data = true },
             .alloc = alloc,
         };
     }
@@ -61,9 +59,8 @@ pub const modtable_entry = struct {
         return modtable_entry{
             .name = "base.gridver",
             .version = 0,
-            .optional_msg = "specifies grid algorithm (modifies physics)",
             .data = data,
-            .flags = modflags{ .optional = true, .extra_data = true, .physics = true },
+            .flags = modflags{ .extra_data = true, .physics = true },
             .alloc = alloc,
         };
     }
@@ -91,9 +88,8 @@ pub const modtable_entry = struct {
                 return modtable_entry{
                     .name = "base.startline",
                     .version = 0,
-                    .optional_msg = "determines starting position, affects physics",
                     .data = data,
-                    .flags = modflags{ .optional = true, .extra_data = true, .physics = true },
+                    .flags = modflags{ .extra_data = true, .physics = true },
                     .alloc = alloc,
                 };
             } else { // TODO check what 6.2 would do in this case
@@ -103,9 +99,8 @@ pub const modtable_entry = struct {
                 return modtable_entry{
                     .name = "base.startoffset",
                     .version = 0,
-                    .optional_msg = "determines starting position, affects physics",
                     .data = data,
-                    .flags = modflags{ .optional = true, .extra_data = true, .physics = true },
+                    .flags = modflags{ .extra_data = true, .physics = true },
                     .alloc = alloc,
                 };
             }
@@ -118,9 +113,8 @@ pub const modtable_entry = struct {
             return modtable_entry{
                 .name = "base.startoffset",
                 .version = 0,
-                .optional_msg = "determines starting position, affects physics",
                 .data = data,
-                .flags = modflags{ .optional = true, .extra_data = true, .physics = true },
+                .flags = modflags{ .extra_data = true, .physics = true },
                 .alloc = alloc,
             };
         }
@@ -191,9 +185,8 @@ pub const modtable_entry = struct {
             out[0] = modtable_entry{
                 .name = "base.simline",
                 .version = 0,
-                .optional_msg = "contains physics lines, affects both physics and visuals",
                 .data = @ptrCast(try simlinebuffer.toOwnedSlice()),
-                .flags = modflags{ .optional = true, .extra_data = true, .physics = true, .scenery = true },
+                .flags = modflags{ .extra_data = true, .physics = true, .scenery = true },
                 .alloc = alloc,
             };
         }
@@ -202,9 +195,8 @@ pub const modtable_entry = struct {
             out[1] = modtable_entry{
                 .name = "base.scnline",
                 .version = 0,
-                .optional_msg = "contains scenery lines",
                 .data = @ptrCast(try scnlinebuffer.toOwnedSlice()),
-                .flags = modflags{ .optional = true, .extra_data = true, .scenery = true },
+                .flags = modflags{ .extra_data = true, .scenery = true },
                 .alloc = alloc,
             };
         }
@@ -264,13 +256,6 @@ pub const lrb_state = struct {
                 // padding
                 try writer.writeInt(u64, 0, .little); // pointer
                 try writer.writeInt(u64, 0, .little); // length
-            }
-
-            if (self.entries[i].flags.optional) {
-                if (self.entries[i].optional_msg) |msg| {
-                    try writer.writeInt(u8, std.math.cast(u8, msg.len) orelse return error.CastError, .little);
-                    try writer.writeAll(msg);
-                }
             }
         }
         // go back and write the data sections
