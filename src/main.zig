@@ -1,4 +1,6 @@
 const std = @import("std");
+const clap = @import("clap");
+
 const sol = @import("sol.zig");
 const lrb = @import("lrb.zig");
 
